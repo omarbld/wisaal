@@ -1,0 +1,56 @@
+name: wisaal
+description: تطبيق وصال الذكي لمكافحة هدر الطعام في المغرب
+publish_to: 'none'
+version: 1.0.0+1
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  fl_chart: ^0.68.0
+  image_picker: ^1.0.4
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^5.1.0
+  cupertino_icons: ^1.0.6
+  supabase_flutter: ^1.10.7
+  google_fonts: ^6.1.0
+  flutter_localizations:
+    sdk: flutter
+  flutter_dotenv: ^5.1.0
+  geolocator: ^10.1.0
+  timeago: ^3.6.0
+  intl: ^0.20.2
+  printing: ^5.11.1
+  pdf: ^3.10.8
+  path_provider: ^2.0.15
+  bidi: ^2.0.13
+  dartarabic: ^0.3.1
+  google_maps_flutter: ^2.5.0
+  share_plus: ^7.2.2
+  flutter_polyline_points: ^2.0.0
+  http: ^1.1.0
+
+
+dependency_overrides:
+  sign_in_with_apple: ^6.0.0
+
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/donor_marker.png
+    - assets/volunteer_marker.png
+    - assets/association_marker.png
+    - .env
+    - assets/
+    - assets/fonts/
+  fonts:
+    - family: Cairo
+      fonts:
+        - asset: assets/fonts/Cairo-Regular.ttf
+        - asset: assets/fonts/Cairo-Bold.ttf
+        - asset: assets/fonts/Cairo-SemiBold.ttf
+    - family: Tajawal
+      fonts:
+        - asset: assets/fonts/Tajawal-Regular.ttf
