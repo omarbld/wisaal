@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 import 'otp_screen.dart';
+import 'core/security/secure_error_handler.dart';
+import 'core/security/rate_limiter.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -9,11 +11,12 @@ class AuthScreen extends StatefulWidget {
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen> {
+class _AuthScreenState extends State<AuthScreen> with RateLimitedWidget {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   bool _loading = false;
   String? _error;
+  int _failedAttempts = 0;
 
   @override
   void dispose() {
@@ -25,34 +28,106 @@ class _AuthScreenState extends State<AuthScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+
+    // التحقق من صحة البريد الإلكتروني
+    final email = _emailController.text.trim();
+    if (!SecureErrorHandler.isValidEmail(email)) {
+      setState(() {
+        _error = 'البريد الإلكتروني غير صالح';
+      });
+      return;
+    }
+
+    // التحقق من Rate Limiting
+    if (!canExecute('auth_otp')) {
+      final rateLimitInfo = getRateLimitInfo('auth_otp');
+      setState(() {
+        _error = 'تم تجاوز الحد المسموح لطلبات OTP. يرجى المحاولة بعد ${rateLimitInfo.timeUntilReset?.inMinutes ?? 10} دقائق';
+      });
+      SecureErrorHandler.logSecurityEvent('OTP_RATE_LIMIT_EXCEEDED', {
+        'email': email,
+        'attempts': _failedAttempts,
+      });
+      return;
+    }
+
     setState(() {
       _loading = true;
       _error = null;
     });
+
     try {
-      final supabaseClient = supabase.Supabase.instance.client;
-      await supabaseClient.auth.signInWithOtp(
-        email: _emailController.text.trim(),
-        emailRedirectTo: 'io.supabase.wisaal://login-callback/',
+      final result = await executeWithRateLimit(
+        'auth_otp',
+        () async {
+          final supabaseClient = supabase.Supabase.instance.client;
+          return await supabaseClient.auth.signInWithOtp(
+            email: email,
+            emailRedirectTo: 'io.supabase.wisaal://login-callback/',
+          );
+        },
+        onRateLimitExceeded: () {
+          setState(() {
+            _error = 'تم تجاوز الحد المسموح للطلبات';
+          });
+        },
       );
-      if (mounted) {
+
+      if (result != null && mounted) {
+        // تسجيل نجاح العملية
+        SecureErrorHandler.logSecurityEvent('OTP_SENT_SUCCESS', {
+          'email': email,
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('تم إرسال رمز التحقق إلى بريدك الإلكتروني')),
+            content: Text('تم إرسال رمز التحقق إلى بريدك الإلكتروني'),
+            backgroundColor: Colors.green,
+          ),
         );
+        
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) => OtpScreen(email: _emailController.text.trim()),
+            builder: (_) => OtpScreen(email: email),
           ),
         );
       }
     } on supabase.AuthException catch (e) {
-      setState(() {
-        _error = e.message;
+      _failedAttempts++;
+      
+      // تسجيل فشل العملية
+      SecureErrorHandler.logSecurityEvent('OTP_SEND_FAILED', {
+        'email': email,
+        'error': e.message,
+        'attempts': _failedAttempts,
       });
-    } catch (e) {
+
       setState(() {
-        _error = 'حدث خطأ غير متوقع';
+        _error = SecureErrorHandler.getSafeErrorMessage(e);
+      });
+
+      // إذا تجاوز عدد المحاولات الفاشلة 5، قم بحظر مؤقت
+      if (_failedAttempts >= 5) {
+        setState(() {
+          _error = 'تم تجاوز الحد المسموح للمحاولات. يرجى المحاولة بعد 15 دقيقة';
+        });
+        
+        SecureErrorHandler.logSecurityEvent('MULTIPLE_FAILED_OTP_ATTEMPTS', {
+          'email': email,
+          'attempts': _failedAttempts,
+        });
+      }
+    } catch (e) {
+      _failedAttempts++;
+      
+      SecureErrorHandler.logSecurityEvent('OTP_SEND_ERROR', {
+        'email': email,
+        'error': e.toString(),
+        'attempts': _failedAttempts,
+      });
+
+      setState(() {
+        _error = SecureErrorHandler.getSafeErrorMessage(e);
       });
     } finally {
       if (mounted) {

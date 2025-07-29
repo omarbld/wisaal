@@ -14,13 +14,13 @@ import 'register_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize app configuration
   await AppConfig.initialize();
-  
+
   // Initialize Supabase
   await SupabaseConfig.init();
-  
+
   // Set up error handling
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
@@ -29,7 +29,7 @@ void main() async {
       stackTrace: details.stack,
     );
   };
-  
+
   runApp(const WisaalApp());
 }
 
@@ -39,7 +39,8 @@ class WisaalApp extends StatefulWidget {
   @override
   State<WisaalApp> createState() => _WisaalAppState();
 
-  static _WisaalAppState of(BuildContext context) => context.findAncestorStateOfType<_WisaalAppState>()!;
+  static _WisaalAppState of(BuildContext context) =>
+      context.findAncestorStateOfType<_WisaalAppState>()!;
 }
 
 class _WisaalAppState extends State<WisaalApp> {

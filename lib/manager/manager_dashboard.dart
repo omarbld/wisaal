@@ -206,7 +206,53 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
     ];
   }
 
+  BarChartData _buildWeeklyDonationsData(ThemeData theme, Map<String, dynamic> stats) {
+    final weeklyData = stats['weekly_donations'] as List<double>;
+    final days = ['سبت', 'أحد', 'اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة'];
+
+    return BarChartData(
+      barGroups: List.generate(weeklyData.length, (index) {
+        return BarChartGroupData(
+          x: index,
+          barRods: [BarChartRodData(toY: weeklyData[index], color: theme.colorScheme.primary, width: 16)],
+        );
+      }),
+      titlesData: FlTitlesData(
+        bottomTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            getTitlesWidget: (value, meta) => Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Text(days[value.toInt() % 7], style: theme.textTheme.bodySmall),
+            ),
+            reservedSize: 30,
+          ),
+        ),
+        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      ),
+    );
   }
+
+  Widget _buildBarChartCard(String title, BarChartData data, ThemeData theme) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Text(title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 24),
+            SizedBox(
+              height: 200,
+              child: BarChart(data),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _StatCard extends StatelessWidget {
   final String title;
@@ -239,53 +285,6 @@ class _StatCard extends StatelessWidget {
       ),
     );
   }
-}
-
-Widget _buildBarChartCard(String title, BarChartData data, ThemeData theme) {
-  return Card(
-    child: Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          Text(title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 200,
-            child: BarChart(data),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-BarChartData _buildWeeklyDonationsData(ThemeData theme, Map<String, dynamic> stats) {
-  final weeklyData = stats['weekly_donations'] as List<double>;
-  final days = ['سبت', 'أحد', 'اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة'];
-
-  return BarChartData(
-    barGroups: List.generate(weeklyData.length, (index) {
-      return BarChartGroupData(
-        x: index,
-        barRods: [BarChartRodData(toY: weeklyData[index], color: theme.colorScheme.primary, width: 16)],
-      );
-    }),
-    titlesData: FlTitlesData(
-      bottomTitles: AxisTitles(
-        sideTitles: SideTitles(
-          showTitles: true,
-          getTitlesWidget: (value, meta) => Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Text(days[value.toInt() % 7], style: theme.textTheme.bodySmall),
-          ),
-          reservedSize: 30,
-        ),
-      ),
-      leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-      topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-      rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-    ),
-  );
 }
 
 class _QuickActionButton extends StatelessWidget {

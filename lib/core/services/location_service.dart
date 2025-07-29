@@ -237,6 +237,47 @@ class LocationService {
     return Geolocator.distanceBetween(lat1, lon1, lat2, lon2);
   }
 
+  /// حذف الموقع المحفوظ للمستخدم الحالي
+  static Future<bool> clearUserSavedLocation({BuildContext? context}) async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) {
+        debugPrint('❌ المستخدم غير مسجل الدخول');
+        return false;
+      }
+
+      await _supabase.from('users').update({
+        'location': null,
+      }).eq('id', user.id);
+
+      debugPrint('✅ تم حذف الموقع المحفوظ بنجاح');
+      
+      if (context != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ تم حذف موقعك المحفوظ'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+      
+      return true;
+    } catch (e) {
+      debugPrint('❌ خطأ في حذف الموقع المحفوظ: $e');
+      
+      if (context != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ خطأ في حذف الموقع المحفوظ: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      
+      return false;
+    }
+  }
+
   /// عرض dialog لتفعيل خدمات الموقع
   static Future<void> _showLocationServiceDialog(BuildContext context) async {
     return showDialog(

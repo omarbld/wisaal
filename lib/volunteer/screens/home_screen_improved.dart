@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:wisaal/core/theme.dart';
 import 'package:wisaal/volunteer/volunteer_task_details.dart';
+import 'package:wisaal/common/utils/phone_utils.dart';
 import 'package:wisaal/common/widgets/error_handler.dart';
 import 'package:wisaal/volunteer/screens/advanced_search_screen.dart';
 import 'package:wisaal/volunteer/screens/all_volunteer_tasks_screen.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class HomeScreenImproved extends StatefulWidget {
+  const HomeScreenImproved({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreenImproved> createState() => _HomeScreenImprovedState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class _HomeScreenImprovedState extends State<HomeScreenImproved> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -72,9 +72,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       ]);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في تحميل البيانات: $e')),
-        );
+        ErrorHandler.showError(context, 'خطأ في تحميل البيانات: $e');
       }
     } finally {
       setState(() => _loading = false);
@@ -200,19 +198,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           .eq('donation_id', donationId);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تم قبول التبرع بنجاح! 🎉'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        ErrorHandler.showSuccess(context, 'تم قبول التبرع بنجاح! 🎉');
         _loadDashboardData();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في قبول التبرع: $e')),
-        );
+        ErrorHandler.showError(context, 'خطأ في قبول التبرع: $e');
       }
     }
   }
@@ -267,7 +258,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       expandedHeight: 120,
       floating: false,
       pinned: true,
-      automaticallyImplyLeading: false, // This removes the back button
+      automaticallyImplyLeading: false,
       backgroundColor: COLOR_VOLUNTEER_ACCENT,
       flexibleSpace: FlexibleSpaceBar(
         title: Text(
@@ -277,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             fontWeight: FontWeight.bold,
           ),
         ),
-                background: Container(
+        background: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -295,9 +286,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           children: [
             IconButton(
               icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-              onPressed: () {
-                _showNotificationsDialog();
-              },
+              onPressed: _showNotificationsDialog,
             ),
             if (_unreadNotificationsCount > 0)
               Positioned(
@@ -361,7 +350,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           .update({'is_read': true})
           .eq('id', notificationId);
       
-      // Update local state
       setState(() {
         final index = _notifications.indexWhere((n) => n['id'] == notificationId);
         if (index != -1) {
@@ -385,7 +373,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           .eq('user_id', user.id)
           .eq('is_read', false);
       
-      // Update local state
       setState(() {
         for (var notification in _notifications) {
           notification['is_read'] = true;
@@ -435,35 +422,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             _formatNotificationDate(notification['created_at']),
                             style: const TextStyle(fontSize: 12, color: Colors.grey),
                           ),
-                          onTap: () async {
+                          onTap: () {
                             _markNotificationAsRead(notification['id']);
                             Navigator.pop(context);
-                            final donationId = notification['donation_id'];
-                            if (donationId != null) {
-                              try {
-                                final donationData = await _supabase
-                                    .from('donations')
-                                    .select('''
-                                      *,
-                                      donor:donor_id(full_name, phone, city, avatar_url),
-                                      association:association_id(full_name)
-                                    ''')
-                                    .eq('donation_id', donationId)
-                                    .single();
-                                if (mounted) {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          VolunteerTaskDetailsScreen(donation: donationData),
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                if (mounted) {
-                                  ErrorHandler.showError(context, 'تعذر فتح تفاصيل المهمة');
-                                }
-                              }
-                            }
                           },
                         ),
                       );
@@ -568,18 +529,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             IconButton(
               icon: Icon(Icons.phone, color: COLOR_VOLUNTEER_ACCENT),
               onPressed: () async {
-                final phone = _associationInfo!['phone'];
-                if (phone != null) {
-                  final Uri launchUri = Uri(
-                    scheme: 'tel',
-                    path: phone,
-                  );
-                  if (await canLaunchUrl(launchUri)) {
-                    await launchUrl(launchUri);
-                  } else {
-                    if (mounted) {
-                      ErrorHandler.showError(context, 'تعذر إجراء الاتصال');
-                    }
+                try {
+                  await PhoneUtils.makePhoneCall(_associationInfo!['phone']);
+                } catch (e) {
+                  if (mounted) {
+                    ErrorHandler.showError(context, 'تعذر فتح تطبيق الهاتف: $e');
                   }
                 }
               },
@@ -710,7 +664,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         ),
                       ),
                       Text(
-                        'ابحث عن تبرعات جديدة لتبدأ العمل',
+                        'ابحث عن تبر��ات جديدة لتبدأ العمل',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Colors.grey[500],
                         ),
@@ -959,7 +913,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // صورة أو أيقونة التبرع
             Container(
               height: 100,
               decoration: BoxDecoration(
@@ -1004,7 +957,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ],
               ),
             ),
-            // تفاصيل التبرع
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(SPACING_SM),
@@ -1064,12 +1016,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Widget _buildFloatingActionButton() {
     return FloatingActionButton.extended(
-      onPressed: () {
-        Navigator.of(context).push(
+      onPressed: () async {
+        final result = await Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => const AdvancedSearchScreen(),
           ),
         );
+        if (result != null) {
+          // يمكن تطبيق فلاتر البحث المتقدم هنا
+          _loadDashboardData();
+        }
       },
       backgroundColor: COLOR_VOLUNTEER_ACCENT,
       icon: const Icon(Icons.search, color: Colors.white),

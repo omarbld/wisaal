@@ -583,17 +583,12 @@ class _LocationManagementScreenState extends State<LocationManagementScreen> {
 
   /// حذف الموقع المحفوظ
   Future<void> _clearSavedLocation() async {
-    // هذه الوظيفة تحتاج إلى تنفيذ في LocationService
-    setState(() {
-      _savedLocation = null;
-    });
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('تم حذف الموقع المحفوظ'),
-        backgroundColor: Colors.green,
-      ),
-    );
+    bool success = await LocationService.clearUserSavedLocation(context: context);
+    if (success) {
+      setState(() {
+        _savedLocation = null;
+      });
+    }
   }
 
   /// تحميل البيانات القريبة

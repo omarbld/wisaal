@@ -128,30 +128,36 @@ class _UserCard extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('تعديل دور المستخدم'),
-          content: DropdownButton<String>(
-            value: selectedRole,
-            isExpanded: true,
-            items: const [
-              DropdownMenuItem(value: 'donor', child: Text('متبرع')),
-              DropdownMenuItem(value: 'volunteer', child: Text('متطوع')),
-              DropdownMenuItem(value: 'association', child: Text('جمعية')),
-              DropdownMenuItem(value: 'manager', child: Text('مدير')),
-            ],
-            onChanged: (value) {
-              if (value != null) {
-                selectedRole = value;
-              }
-            },
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('إلغاء')),
-            ElevatedButton(onPressed: () {
-              onUpdate(user['id'], {'role': selectedRole});
-              Navigator.of(context).pop();
-            }, child: const Text('حفظ')),
-          ],
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('تعديل دور المستخدم'),
+              content: DropdownButton<String>(
+                value: selectedRole,
+                isExpanded: true,
+                items: const [
+                  DropdownMenuItem(value: 'donor', child: Text('متبرع')),
+                  DropdownMenuItem(value: 'volunteer', child: Text('متطوع')),
+                  DropdownMenuItem(value: 'association', child: Text('جمعية')),
+                  DropdownMenuItem(value: 'manager', child: Text('مدير')),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      selectedRole = value;
+                    });
+                  }
+                },
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('إلغاء')),
+                ElevatedButton(onPressed: () {
+                  onUpdate(user['id'], {'role': selectedRole});
+                  Navigator.of(context).pop();
+                }, child: const Text('حفظ')),
+              ],
+            );
+          },
         );
       },
     );

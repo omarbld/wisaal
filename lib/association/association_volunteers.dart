@@ -70,8 +70,8 @@ class _AssociationVolunteersScreenState
                 }
                 volunteers.sort((a, b) {
                   if (_sortOrder == 'rating') {
-                    return (b['average_rating'] ?? 0.0)
-                        .compareTo(a['average_rating'] ?? 0.0);
+                    return (b['avg_rating'] ?? 0.0)
+                        .compareTo(a['avg_rating'] ?? 0.0);
                   } else {
                     return (a['full_name'] ?? '')
                         .compareTo(b['full_name'] ?? '');
@@ -141,7 +141,7 @@ class _VolunteerCard extends StatelessWidget {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final isActive = volunteer['is_active'] ?? false;
-    final avgRating = volunteer['average_rating'] as double? ?? 0.0;
+    final avgRating = volunteer['avg_rating'] as double? ?? 0.0;
 
     return Card(
       child: ListTile(

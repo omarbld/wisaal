@@ -90,16 +90,16 @@ class _AssociationSelectVolunteerScreenState
                         children: [
                           Icon(Icons.star, color: Colors.amber.shade700, size: 16),
                           const SizedBox(width: 4),
-                          Text(volunteer['average_rating']?.toStringAsFixed(1) ?? 'N/A'),
+                          Text(volunteer['avg_rating']?.toStringAsFixed(1) ?? 'N/A'),
                           const SizedBox(width: 12),
                           Icon(Icons.check_circle, color: Colors.green.shade700, size: 16),
                           const SizedBox(width: 4),
-                          Text(volunteer['completed_tasks_count']?.toString() ?? '0'),
+                          Text(volunteer['completed_tasks']?.toString() ?? '0'),
                         ],
                       ),
                       trailing: const Icon(Icons.arrow_forward_ios),
                       onTap: () {
-                        Navigator.of(context).pop(volunteer['id'].toString());
+                        Navigator.of(context).pop(volunteer['volunteer_id'].toString());
                       },
                     ),
                   );
